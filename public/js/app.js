@@ -11,8 +11,23 @@
       headers: { 'Content-Type': 'application/json' },
       ...opts
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.detail || data.error || '请求失败');
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (e) {
+      data = {};
+    }
+    if (!res.ok) {
+      let msg = '请求失败';
+      if (typeof data.detail === 'string') {
+        msg = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        msg = data.detail.map((d) => (d && d.msg) || (d && d.type) || '参数错误').join('；');
+      } else if (data.error) {
+        msg = typeof data.error === 'string' ? data.error : '请求失败';
+      }
+      throw new Error(msg);
+    }
     return data;
   }
 

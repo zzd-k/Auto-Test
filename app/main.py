@@ -84,7 +84,7 @@ def run_single(case_id: str):
 
 
 class RunIn(BaseModel):
-    ids: list = None
+    ids: list | None = None
     name: str = ""
 
 
