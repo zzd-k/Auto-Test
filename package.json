@@ -1,0 +1,15 @@
+{
+  "name": "auto-test-platform",
+  "version": "1.0.0",
+  "description": "轻量级自动化测试管理平台 - 支持 HTTP 接口测试用例管理、批量执行、断言校验与历史报告",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["test", "automation", "api-testing"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

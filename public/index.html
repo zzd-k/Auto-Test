@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto-Test 自动化测试平台</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">AT</div>
+        <div class="brand-text">
+          <strong>Auto-Test</strong>
+          <span>测试管理平台</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="nav-item active" data-view="dashboard">
+          <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          <span>仪表盘</span>
+        </a>
+        <a class="nav-item" data-view="cases">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V5h14v14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z"/></svg>
+          <span>用例管理</span>
+        </a>
+        <a class="nav-item" data-view="run">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span>运行中心</span>
+        </a>
+        <a class="nav-item" data-view="reports">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <span>测试报告</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="server-status">
+          <span class="dot"></span>
+          <span>服务运行中</span>
+        </div>
+        <span class="ver">v1.0.0</span>
+      </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="main">
+      <!-- 仪表盘 -->
+      <section id="view-dashboard" class="view active">
+        <div class="page-head">
+          <div>
+            <h1>仪表盘</h1>
+            <p class="sub">自动化测试运行总览</p>
+          </div>
+          <button class="btn primary" id="btn-quick-run">立即运行全部</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg></div>
+            <div><div class="stat-num" id="stat-cases">-</div><div class="stat-label">用例总数</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15l-5-5 1.4-1.4L10 14.2l7.6-7.6L19 8l-9 9z"/></svg></div>
+            <div><div class="stat-num" id="stat-passed">-</div><div class="stat-label">累计通过</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            <div><div class="stat-num" id="stat-executed">-</div><div class="stat-label">累计执行</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+            <div><div class="stat-num" id="stat-runs">-</div><div class="stat-label">运行次数</div></div>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-head"><h2>历史通过率</h2><span class="tag" id="rate-tag">-</span></div>
+            <div class="ring-wrap">
+              <div class="ring" id="rate-ring">
+                <div class="ring-center"><span id="rate-num">-</span><small>通过率</small></div>
+              </div>
+              <div class="ring-legend">
+                <div><span class="lg green"></span>通过</div>
+                <div><span class="lg red"></span>失败/异常</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>最近运行</h2><a class="link" data-goto="reports">查看全部</a></div>
+            <div id="recent-list" class="recent-list"><div class="empty">暂无运行记录</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 用例管理 -->
+      <section id="view-cases" class="view">
+        <div class="page-head">
+          <div>
+            <h1>用例管理</h1>
+            <p class="sub">管理你的 HTTP 接口测试用例</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn ghost" id="btn-toggle-all">全部启用/停用</button>
+            <button class="btn primary" id="btn-new-case">新建用例</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <input class="input search" id="case-search" placeholder="搜索名称 / URL / 描述...">
+            <select class="input" id="case-filter">
+              <option value="all">全部状态</option>
+              <option value="enabled">已启用</option>
+              <option value="disabled">已停用</option>
+            </select>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:36px"><input type="checkbox" id="check-all"></th>
+                <th>用例名称</th>
+                <th style="width:90px">方法</th>
+                <th>URL</th>
+                <th style="width:70px">状态</th>
+                <th style="width:150px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="case-table-body"></tbody>
+          </table>
+          <div id="case-empty" class="empty hidden">没有匹配的用例</div>
+        </div>
+      </section>
+
+      <!-- 运行中心 -->
+      <section id="view-run" class="view">
+        <div class="page-head">
+          <div>
+            <h1>运行中心</h1>
+            <p class="sub">批量执行测试并实时查看结果</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="run-config">
+            <input class="input" id="run-suite-name" placeholder="套件名称（可选）" style="flex:1">
+            <select class="input" id="run-scope" style="width:180px">
+              <option value="enabled">全部启用用例</option>
+              <option value="all">全部用例</option>
+              <option value="selected">选中的用例</option>
+            </select>
+            <button class="btn primary" id="btn-run-suite">开始运行</button>
+          </div>
+          <div id="run-status" class="run-status"></div>
+          <div id="run-log" class="run-log"></div>
+        </div>
+      </section>
+
+      <!-- 测试报告 -->
+      <section id="view-reports" class="view">
+        <div class="page-head">
+          <div>
+            <h1>测试报告</h1>
+            <p class="sub">查看历史运行记录与执行详情</p>
+          </div>
+          <button class="btn ghost" id="btn-refresh-reports">刷新</button>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>套件名称</th>
+                <th style="width:160px">运行时间</th>
+                <th style="width:90px">用例数</th>
+                <th style="width:100px">通过率</th>
+                <th style="width:90px">耗时</th>
+                <th style="width:90px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="report-table-body"></tbody>
+          </table>
+          <div id="report-empty" class="empty hidden">暂无运行记录，去运行中心跑一次测试</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 用例编辑弹窗 -->
+  <div class="modal-mask hidden" id="case-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modal-title">新建用例</h3>
+        <button class="modal-close" id="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="f-id">
+        <div class="form-row">
+          <label>用例名称 <em>*</em></label>
+          <input class="input" id="f-name" placeholder="例如：登录接口-正确密码">
+        </div>
+        <div class="form-row">
+          <label>描述</label>
+          <input class="input" id="f-desc" placeholder="描述这个用例的验证目标">
+        </div>
+        <div class="form-row">
+          <label>请求方法 <em>*</em></label>
+          <select class="input" id="f-method">
+            <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>请求 URL <em>*</em></label>
+          <input class="input" id="f-url" placeholder="https://api.example.com/login">
+        </div>
+        <div class="form-row">
+          <label>Headers（JSON）</label>
+          <textarea class="input mono" id="f-headers" rows="2" placeholder='{"Content-Type": "application/json"}'></textarea>
+        </div>
+        <div class="form-row">
+          <label>请求体 Body</label>
+          <textarea class="input mono" id="f-body" rows="3" placeholder='{"username": "admin", "password": "123456"}'></textarea>
+        </div>
+        <div class="form-row">
+          <label>断言</label>
+          <div id="assert-list"></div>
+          <button class="btn ghost small" id="btn-add-assert">+ 添加断言</button>
+        </div>
+        <div class="form-row split">
+          <div>
+            <label>超时时间 (ms)</label>
+            <input class="input" id="f-timeout" type="number" value="10000">
+          </div>
+          <div class="chk-row">
+            <input type="checkbox" id="f-enabled" checked>
+            <label for="f-enabled">启用此用例</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" id="btn-cancel">取消</button>
+        <button class="btn primary" id="btn-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 报告详情弹窗 -->
+  <div class="modal-mask hidden" id="report-modal">
+    <div class="modal wide">
+      <div class="modal-head">
+        <h3>运行详情</h3>
+        <button class="modal-close" id="report-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="report-detail"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="js/app.js"></script>
+</body>
+</html>
