@@ -236,6 +236,13 @@ body {
   display: inline-block; padding: 3px 10px; border-radius: 6px;
   font-size: 11px; font-weight: 700;
 }
+.type-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 5px;
+  font-size: 11px; font-weight: 600;
+  margin-right: 6px; vertical-align: 1px;
+}
+.type-tag.http { background: rgba(79,140,255,0.15); color: var(--primary); }
+.type-tag.ui { background: rgba(167,139,250,0.15); color: var(--purple); }
 .method-GET { background: rgba(45,212,167,0.15); color: var(--green); }
 .method-POST { background: rgba(79,140,255,0.15); color: var(--primary); }
 .method-PUT { background: rgba(251,191,36,0.15); color: var(--orange); }
@@ -335,13 +342,18 @@ body {
 .assert-item {
   display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
 }
-.assert-item select, .assert-item input {
+.assert-item select, .assert-item input, .step-item select, .step-item input {
   background: var(--card-2); border: 1px solid var(--border); color: var(--text);
   border-radius: 6px; padding: 7px 10px; font-size: 12.5px; outline: none;
 }
 .assert-item select { width: 130px; }
 .assert-item input { flex: 1; }
 .assert-item .rm-assert { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; }
+.step-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.step-item .s-action { width: 110px; }
+.step-item .s-selector { flex: 1.4; }
+.step-item .s-value { flex: 1; }
+.step-item .rm-assert { background: none; border: none; color: var(--red); cursor: pointer; font-size: 16px; flex-shrink: 0; }
 
 /* ---------- 报告详情 ---------- */
 .detail-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }

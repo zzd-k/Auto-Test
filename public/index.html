@@ -201,32 +201,62 @@
           <input class="input" id="f-desc" placeholder="描述这个用例的验证目标">
         </div>
         <div class="form-row">
-          <label>请求方法 <em>*</em></label>
-          <select class="input" id="f-method">
-            <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+          <label>用例类型 <em>*</em></label>
+          <select class="input" id="f-type">
+            <option value="http">接口测试（HTTP）</option>
+            <option value="ui">浏览器测试（Playwright）</option>
           </select>
         </div>
-        <div class="form-row">
-          <label>请求 URL <em>*</em></label>
-          <input class="input" id="f-url" placeholder="https://api.example.com/login">
+
+        <!-- HTTP 用例字段 -->
+        <div id="http-fields">
+          <div class="form-row">
+            <label>请求方法 <em>*</em></label>
+            <select class="input" id="f-method">
+              <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>请求 URL <em>*</em></label>
+            <input class="input" id="f-url" placeholder="https://api.example.com/login">
+          </div>
+          <div class="form-row">
+            <label>Headers（JSON）</label>
+            <textarea class="input mono" id="f-headers" rows="2" placeholder='{"Content-Type": "application/json"}'></textarea>
+          </div>
+          <div class="form-row">
+            <label>请求体 Body</label>
+            <textarea class="input mono" id="f-body" rows="3" placeholder='{"username": "admin", "password": "123456"}'></textarea>
+          </div>
+          <div class="form-row">
+            <label>断言</label>
+            <div id="assert-list"></div>
+            <button class="btn ghost small" id="btn-add-assert">+ 添加断言</button>
+          </div>
         </div>
-        <div class="form-row">
-          <label>Headers（JSON）</label>
-          <textarea class="input mono" id="f-headers" rows="2" placeholder='{"Content-Type": "application/json"}'></textarea>
+
+        <!-- UI 用例字段 -->
+        <div id="ui-fields" class="hidden">
+          <div class="form-row">
+            <label>起始 URL <em>*</em></label>
+            <input class="input" id="f-url-ui" placeholder="https://example.com">
+          </div>
+          <div class="form-row">
+            <label>操作步骤</label>
+            <div id="step-list"></div>
+            <button class="btn ghost small" id="btn-add-step">+ 添加操作</button>
+          </div>
+          <div class="form-row">
+            <label>断言（浏览器）</label>
+            <div id="ui-assert-list"></div>
+            <button class="btn ghost small" id="btn-add-ui-assert">+ 添加断言</button>
+          </div>
         </div>
-        <div class="form-row">
-          <label>请求体 Body</label>
-          <textarea class="input mono" id="f-body" rows="3" placeholder='{"username": "admin", "password": "123456"}'></textarea>
-        </div>
-        <div class="form-row">
-          <label>断言</label>
-          <div id="assert-list"></div>
-          <button class="btn ghost small" id="btn-add-assert">+ 添加断言</button>
-        </div>
+
         <div class="form-row split">
           <div>
             <label>超时时间 (ms)</label>
-            <input class="input" id="f-timeout" type="number" value="10000">
+            <input class="input" id="f-timeout" type="number" value="30000">
           </div>
           <div class="chk-row">
             <input type="checkbox" id="f-enabled" checked>

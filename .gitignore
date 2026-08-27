@@ -1,4 +1,7 @@
-node_modules/
+__pycache__/
+*.pyc
 data/db.json
+screenshots/
 *.log
 .DS_Store
+node_modules/

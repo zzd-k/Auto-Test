@@ -1,4 +1,4 @@
-/* Auto-Test 自动化测试平台 - 前端逻辑 */
+/* Auto-Test 自动化测试平台 - 前端逻辑（支持 HTTP 接口测试 + Playwright UI 测试） */
 (function () {
   'use strict';
 
@@ -12,7 +12,7 @@
       ...opts
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || '请求失败');
+    if (!res.ok) throw new Error(data.detail || data.error || '请求失败');
     return data;
   }
 
@@ -28,7 +28,7 @@
   function fmtTime(iso) {
     if (!iso) return '-';
     const d = new Date(iso);
-    return d.toLocaleString('zh-CN', { hour12: false });
+    return isNaN(d) ? iso : d.toLocaleString('zh-CN', { hour12: false });
   }
 
   function fmtDuration(ms) {
@@ -122,14 +122,20 @@
 
     body.innerHTML = list.map((c) => {
       const checked = selectedIds.has(c.id);
+      const typeTag = c.type === 'ui'
+        ? '<span class="type-tag ui">浏览器</span>'
+        : '<span class="type-tag http">接口</span>';
+      const methodHtml = c.type === 'ui'
+        ? '<span class="method-tag method-UI">UI</span>'
+        : `<span class="method-tag method-${c.method}">${c.method}</span>`;
       return `
         <tr data-id="${c.id}">
           <td><input type="checkbox" class="row-check" ${checked ? 'checked' : ''}></td>
           <td>
-            <div class="case-name">${esc(c.name)}</div>
+            <div class="case-name">${typeTag} ${esc(c.name)}</div>
             ${c.desc ? `<div class="case-desc">${esc(c.desc)}</div>` : ''}
           </td>
-          <td><span class="method-tag method-${c.method}">${c.method}</span></td>
+          <td>${methodHtml}</td>
           <td><div class="url-cell" title="${esc(c.url)}">${esc(c.url)}</div></td>
           <td><span class="status-badge ${c.enabled ? 'on' : 'off'}">${c.enabled ? '启用' : '停用'}</span></td>
           <td>
@@ -154,38 +160,85 @@
   }
 
   // ---------- 用例弹窗 ----------
+  function setCaseType(type) {
+    const isUi = type === 'ui';
+    $('#f-type').value = type;
+    $('#http-fields').classList.toggle('hidden', isUi);
+    $('#ui-fields').classList.toggle('hidden', !isUi);
+  }
+
   function openCaseModal(c = null) {
     $('#modal-title').textContent = c ? '编辑用例' : '新建用例';
     $('#f-id').value = c ? c.id : '';
     $('#f-name').value = c ? c.name : '';
     $('#f-desc').value = c ? (c.desc || '') : '';
-    $('#f-method').value = c ? c.method : 'GET';
-    $('#f-url').value = c ? c.url : '';
+    const type = c ? (c.type || 'http') : 'http';
+    setCaseType(type);
+    $('#f-method').value = c && c.type !== 'ui' ? c.method : 'GET';
+    $('#f-url').value = c && c.type !== 'ui' ? c.url : '';
+    $('#f-url-ui').value = c && c.type === 'ui' ? c.url : '';
     $('#f-headers').value = c && c.headers && Object.keys(c.headers).length ? JSON.stringify(c.headers, null, 2) : '';
     $('#f-body').value = c ? (c.body || '') : '';
-    $('#f-timeout').value = c ? c.timeout : 10000;
+    $('#f-timeout').value = c ? c.timeout : 30000;
     $('#f-enabled').checked = c ? c.enabled !== false : true;
 
-    // 断言
-    const list = $('#assert-list');
-    list.innerHTML = '';
-    const asserts = c && c.assertions && c.assertions.length ? c.assertions : [{ type: 'status_code', expected: '200' }];
-    asserts.forEach((a) => addAssertRow(a.type, a.expected));
+    // HTTP 断言
+    const aList = $('#assert-list');
+    aList.innerHTML = '';
+    const asserts = c && c.type !== 'ui' && c.assertions && c.assertions.length
+      ? c.assertions
+      : [{ type: 'status_code', expected: '200' }];
+    asserts.forEach((a) => addAssertRow(a.type, a.expected, false));
+
+    // UI 断言
+    const uaList = $('#ui-assert-list');
+    uaList.innerHTML = '';
+    const uiAsserts = c && c.type === 'ui' && c.assertions && c.assertions.length
+      ? c.assertions
+      : [{ type: 'element_visible', expected: '' }];
+    uiAsserts.forEach((a) => addAssertRow(a.type, a.expected, true));
+
+    // UI 步骤
+    const sList = $('#step-list');
+    sList.innerHTML = '';
+    const steps = c && c.type === 'ui' && c.steps && c.steps.length
+      ? c.steps
+      : [{ action: 'goto', selector: '', value: '' }];
+    steps.forEach((s) => addStepRow(s.action, s.selector, s.value));
+
     $('#case-modal').classList.remove('hidden');
   }
 
-  function addAssertRow(type = 'status_code', expected = '200') {
-    const list = $('#assert-list');
+  const HTTP_ASSERT_OPTS = [
+    ['status_code', '状态码'],
+    ['body_contains', '响应包含文本'],
+    ['body_not_contains', '响应不包含文本'],
+    ['response_time', '响应时间(ms)']
+  ];
+  const UI_ASSERT_OPTS = [
+    ['element_visible', '元素可见'],
+    ['element_hidden', '元素不可见'],
+    ['text_contains', '页面包含文本'],
+    ['title_contains', '标题包含文本'],
+    ['url_contains', 'URL包含文本']
+  ];
+  const STEP_ACTIONS = [
+    ['goto', '打开页面'],
+    ['click', '点击元素'],
+    ['fill', '填写输入框'],
+    ['wait_for', '等待元素'],
+    ['press', '按键'],
+    ['screenshot', '截图']
+  ];
+
+  function addAssertRow(type = 'status_code', expected = '200', isUi = false) {
+    const list = isUi ? $('#ui-assert-list') : $('#assert-list');
+    const opts = isUi ? UI_ASSERT_OPTS : HTTP_ASSERT_OPTS;
     const row = document.createElement('div');
     row.className = 'assert-item';
     row.innerHTML = `
-      <select class="a-type">
-        <option value="status_code">状态码</option>
-        <option value="body_contains">响应包含</option>
-        <option value="body_not_contains">响应不包含</option>
-        <option value="response_time">响应时间</option>
-      </select>
-      <input class="a-expected" placeholder="期望值，如 200 或 登录成功">
+      <select class="a-type">${opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+      <input class="a-expected" placeholder="期望值">
       <button class="rm-assert" title="删除">×</button>`;
     row.querySelector('.a-type').value = type;
     row.querySelector('.a-expected').value = expected;
@@ -193,20 +246,46 @@
     list.appendChild(row);
   }
 
+  function addStepRow(action = 'goto', selector = '', value = '') {
+    const list = $('#step-list');
+    const row = document.createElement('div');
+    row.className = 'step-item';
+    row.innerHTML = `
+      <select class="s-action">${STEP_ACTIONS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+      <input class="s-selector" placeholder="CSS 选择器（goto/截图可不填）">
+      <input class="s-value" placeholder="值 / URL / 等待ms">
+      <button class="rm-assert" title="删除">×</button>`;
+    row.querySelector('.s-action').value = action;
+    row.querySelector('.s-selector').value = selector;
+    row.querySelector('.s-value').value = value;
+    row.querySelector('.rm-assert').addEventListener('click', () => row.remove());
+    list.appendChild(row);
+  }
+
+  function syncTypeFields() {
+    const isUi = $('#f-type').value === 'ui';
+    $('#http-fields').classList.toggle('hidden', isUi);
+    $('#ui-fields').classList.toggle('hidden', !isUi);
+  }
+
   async function saveCase() {
     const id = $('#f-id').value;
     const name = $('#f-name').value.trim();
-    const url = $('#f-url').value.trim();
+    const type = $('#f-type').value;
+    const isUi = type === 'ui';
+    const url = (isUi ? $('#f-url-ui').value : $('#f-url').value).trim();
     if (!name) return toast('请填写用例名称', true);
     if (!url) return toast('请填写请求 URL', true);
 
     let headers = {};
-    const hStr = $('#f-headers').value.trim();
-    if (hStr) {
-      try {
-        headers = JSON.parse(hStr);
-      } catch (e) {
-        return toast('Headers 不是合法 JSON', true);
+    if (!isUi) {
+      const hStr = $('#f-headers').value.trim();
+      if (hStr) {
+        try {
+          headers = JSON.parse(hStr);
+        } catch (e) {
+          return toast('Headers 不是合法 JSON', true);
+        }
       }
     }
 
@@ -215,15 +294,26 @@
       expected: r.querySelector('.a-expected').value.trim()
     })).filter((a) => a.expected);
 
+    let steps = [];
+    if (isUi) {
+      steps = $$('.step-item').map((r) => ({
+        action: r.querySelector('.s-action').value,
+        selector: r.querySelector('.s-selector').value.trim(),
+        value: r.querySelector('.s-value').value.trim()
+      })).filter((s) => s.action === 'goto' ? !!(s.value) : !!(s.selector || s.value));
+    }
+
     const payload = {
       name,
       desc: $('#f-desc').value.trim(),
-      method: $('#f-method').value,
+      type,
+      method: isUi ? 'UI' : $('#f-method').value,
       url,
       headers,
-      body: $('#f-body').value,
+      body: isUi ? '' : $('#f-body').value,
+      steps,
       assertions,
-      timeout: Number($('#f-timeout').value) || 10000,
+      timeout: Number($('#f-timeout').value) || 30000,
       enabled: $('#f-enabled').checked
     };
 
@@ -336,7 +426,11 @@
         if (r.status === 'passed') statusHtml = '<span class="ll-status ll-pass">PASS</span>';
         else if (r.status === 'failed') statusHtml = '<span class="ll-status ll-fail">FAIL</span>';
         else statusHtml = '<span class="ll-status ll-error">ERROR</span>';
-        addLog(`<span class="ll-time">${fmtTime(r.startedAt)}</span>${statusHtml}${esc(r.caseName)} <span class="ll-time">[${r.statusCode || '-'}] ${fmtDuration(r.time)}</span>${r.error ? ' · ' + esc(r.error) : ''}`);
+        const typeTag = r.type === 'ui' ? '[浏览器] ' : '[接口] ';
+        const stepsDetail = r.steps && r.steps.length
+          ? ' <span class="ll-time">' + r.steps.map((s) => s.action + (s.detail ? ':' + s.detail : '')).join(' | ') + '</span>'
+          : '';
+        addLog(`<span class="ll-time">${fmtTime(r.startedAt)}</span>${statusHtml}${typeTag}${esc(r.caseName)} <span class="ll-time">[${r.statusCode || '-'}] ${fmtDuration(r.time)}</span>${stepsDetail}${r.error ? ' · ' + esc(r.error) : ''}`);
       });
 
       addLog(`<span class="ll-status ll-pass">DONE</span> 共 ${report.total} 条，通过 ${report.passed}，失败 ${report.failed}，异常 ${report.errors}，通过率 ${report.passRate}%，耗时 ${fmtDuration(report.duration)}`);
@@ -396,19 +490,24 @@
 
       const itemsHtml = r.results.map((x) => {
         const s = st(x.status);
+        const typeTag = x.type === 'ui' ? '<span class="type-tag ui">浏览器</span>' : '<span class="type-tag http">接口</span>';
         const assertHtml = x.assertions && x.assertions.length
           ? '<div class="di-section">断言结果</div><pre>' + esc(JSON.stringify(x.assertions, null, 2)) + '</pre>'
+          : '';
+        const stepsHtml = x.steps && x.steps.length
+          ? '<div class="di-section">操作步骤</div><pre>' + esc(JSON.stringify(x.steps, null, 2)) + '</pre>'
           : '';
         const errHtml = x.error ? '<div class="di-section">错误信息</div><pre>' + esc(x.error) + '</pre>' : '';
         return `
           <div class="detail-item">
             <div class="di-head">
               <span class="di-status ${s}">${stLabel[s]}</span>
-              <span class="di-name">${esc(x.caseName)}</span>
+              <span class="di-name">${typeTag} ${esc(x.caseName)}</span>
               <span class="di-meta">${x.method} · ${x.statusCode || '-'} · ${fmtDuration(x.time)}</span>
             </div>
             <div class="di-body">
-              <div class="di-section">请求</div><pre>${esc(x.method)} ${esc(x.url)}</pre>
+              <div class="di-section">目标</div><pre>${esc(x.url)}</pre>
+              ${stepsHtml}
               ${assertHtml}
               ${errHtml}
             </div>
@@ -440,7 +539,10 @@
     // 用例
     $('#btn-new-case').addEventListener('click', () => openCaseModal());
     $('#btn-toggle-all').addEventListener('click', toggleAll);
-    $('#btn-add-assert').addEventListener('click', () => addAssertRow());
+    $('#f-type').addEventListener('change', syncTypeFields);
+    $('#btn-add-assert').addEventListener('click', () => addAssertRow('status_code', '200', false));
+    $('#btn-add-ui-assert').addEventListener('click', () => addAssertRow('element_visible', '', true));
+    $('#btn-add-step').addEventListener('click', () => addStepRow());
     $('#modal-close').addEventListener('click', () => $('#case-modal').classList.add('hidden'));
     $('#btn-cancel').addEventListener('click', () => $('#case-modal').classList.add('hidden'));
     $('#btn-save').addEventListener('click', saveCase);
